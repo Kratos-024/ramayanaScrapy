@@ -21,7 +21,6 @@ class MahabharataSpider(scrapy.Spider):
         sections = response.xpath("/html/body/a/@href").getall()
         
         for section in sections:
-            
             relative_url = self.parent_url + f'{section[0:3]}/' + section
             yield scrapy.Request(url=relative_url,callback=self.parse_section,meta={    "BookName":book_name,            "section_no":section[3:]
             })
