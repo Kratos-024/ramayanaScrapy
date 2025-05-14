@@ -6,8 +6,9 @@ class RamayanaSpider(scrapy.Spider):
     allowed_domains = ["www.valmikiramayan.net"]
     start_urls = ["https://www.valmikiramayan.net/"]
 
-    countt=0
-    countttt=0
+    
+    count=0
+    S_no=0
     listt = []
     def parse(self, response):
         frame_src = response.css('frame::attr(src)').get()  
@@ -28,81 +29,120 @@ class RamayanaSpider(scrapy.Spider):
 
         for url in booksUrl:
             relativeUrl = parentUrl + url
-            #print(relativeUrl)
             
-            if "baala" in relativeUrl:   
-                yield scrapy.Request(url=relativeUrl,callback=self.parse_book_baala)
-            elif "kish" in relativeUrl:
-                  yield scrapy.Request(url=relativeUrl,callback=self.parse_book_krish)
-            elif "yuddha" in relativeUrl:
+            if "baala" in f'{relativeUrl}':   
+                self.count=0
+                yield scrapy.Request(url=relativeUrl,callback=self.parse_book_baala) 
+            elif "kish" in f'{relativeUrl}':
+                self.count=0
+                yield scrapy.Request(url=relativeUrl,callback=self.parse_book_krish)
+            elif "aranya" in f'{relativeUrl}':
+                self.count=0
+                yield scrapy.Request(url=relativeUrl,callback=self.parse_book_aranya)
+            elif "yuddha" in f'{relativeUrl}':
+                self.count=0
                 yield scrapy.Request(url=relativeUrl,callback=self.parse_book_yuddha)
-            elif "ayodhya" in relativeUrl:
+            elif "ayodhya" in f'{relativeUrl}':
+                self.count=0
                 yield scrapy.Request(url=relativeUrl,callback=self.parse_book_ayodha)
-             
+            elif "sundara" in f'{relativeUrl}':
+                self.count=0
+                yield scrapy.Request(url=relativeUrl,callback=self.parse_book_sundara)
 
+
+    def parse_book_sundara(self,response):
+        chapters = response.xpath('/html/body/center[2]/table/tr/td[2]/a/@href').getall()
+        for chapter in chapters:
+            sargaUrl =  'https://www.valmikiramayan.net/utf8/sundara/' + chapter
+            yield scrapy.Request(url=sargaUrl,callback=self.parse_book_sarga)
+    def parse_book_aranya (self,response):
+        chapters = response.css("table tr td center table tr td a::attr('href')").getall()
+        for chapter in chapters:
+            sargaUrl =  'https://www.valmikiramayan.net/utf8/aranya/' + chapter
+            yield scrapy.Request(url=sargaUrl,callback=self.parse_book_sarga)
     def parse_book_baala(self,response):
         chapters = response.xpath('/html/body/center[2]/table/tr/td[2]/a/@href').getall()
         for chapter in chapters:
             sargaUrl =  'https://www.valmikiramayan.net/utf8/baala/' + chapter
             yield scrapy.Request(url=sargaUrl,callback=self.parse_book_sarga)
-
-    def parse_book_sarga(self,response):
-        frame_url = response.css("frame::attr(src)").get()
-        if(frame_url):
-            full_url = response.urljoin(frame_url)
-            yield scrapy.Request(url=full_url, callback=self.parse_book_sarga)
-            
-        
-        else:
-            translations = response.css('p.tat::text').getall()
-            if 'balasans' in f'{response}':
-                book = "balasans"
-                sarga= f'{response}'.split("balasans")[1][0:2]
-            elif 'kishkindha' in f'{response}':
-                book="kishkindha"
-                sarga= f'{response}'.split("/kishkindhasans")[1][0:3]
-            elif 'yuddha' in f'{response}':
-                book="yuddha"
-                sarga= f'{response}'.split("/yuddha")[1][0:3]
-            elif 'ayodhya' in f'{response}':
-                print("resseresr",response)
-                book="ayodhya"
-                sarga= f'{response}'.split("/ayodhya")[1][0:3]
-            self.countttt+=1
-            #self.listt.append(sarga)
-            
-            yield {
-                'book':book,
-                "chapter":self.countttt,
-                "sarge":sarga,
-                "Tat":translations
-             }
-      
-            
-             
-                              
-
-        
-        
+         
     def parse_book_ayodha(self,response):
         chapters=response.css("table a.nav::attr(href)").getall()
         for chapter in chapters:
             sargaUrl =  'https://www.valmikiramayan.net/utf8/ayodhya/' + chapter
             yield scrapy.Request(url=sargaUrl,callback=self.parse_book_sarga)
 
-        
-        #$#print("dargeffsdfsdf",sargaUrl)
-        #yield scrapy.Request(url=sargaUrl,callback=self.parse_book_sarga)
-
     def parse_book_krish(self,response):
         chapters=response.css("table a.nav::attr(href)").getall()
-        #chapters = response.xpath('/html/body/center[2]/table/tr/td[2]/a/@href').getall()
         for chapter in chapters:
             sargaUrl =  'https://www.valmikiramayan.net/utf8/kish/' + chapter
             yield scrapy.Request(url=sargaUrl,callback=self.parse_book_sarga)
-        #print("krish",chapters)
     def parse_book_yuddha(self,response):
         chapters=response.css("table a.nav::attr(href)").getall()
         for chapter in chapters:
             sargaUrl =  'https://www.valmikiramayan.net/utf8/yuddha/' + chapter
             yield scrapy.Request(url=sargaUrl,callback=self.parse_book_sarga)
+  
+    def parse_book_sarga(self,response):
+        frame_url = response.css("frame::attr(src)").get()
+        if(frame_url):
+            full_url = response.urljoin(frame_url)
+            yield scrapy.Request(url=full_url, callback=self.parse_book_sarga)
+        else:
+            yield from self.parse_verse(response)
+
+    def parse_verse(self, response):
+        if 'balasans' in f'{response}':
+                # print("bala",self.count)
+                book = "bala"
+                sarga= f'{response}'.split("balasans")[1][0:2]
+        elif 'kishkindha' in f'{response}':
+                # print("kishkindha",self.count)
+                book="kishkindha"
+                
+                sarga= f'{response}'.split("/kishkindhasans")[1][0:3]
+        elif 'yuddha' in f'{response}':
+                # print("yuddha",self.count)
+                book="yuddha"
+                sarga= f'{response}'.split("/yuddhasans")[1][0:3]
+        elif 'ayodhya' in f'{response}':
+                # print("ayodhya",self.count)
+
+                book="ayodhya"
+                sarga= f'{response}'.split("/ayodhyasans")[1][0:3]
+        elif 'sundara' in f'{response}':
+                # print("sundara",self.count)
+
+                book="sundara"
+                sarga= f'{response}'.split("/sundarasans")[1][0:3]
+        elif 'aranya' in f'{response}':
+                # print("aranya",self.count)
+            
+                book="aranya"
+                sarga= f'{response}'.split("/aranyasans")[1][0:3]
+        self.count+=1
+        sarga = ''.join(c for c in sarga if c.isdigit())
+
+        translations = response.css('p.tat::text').getall()
+        Shloka = 0
+        for translation in translations:
+            self.logger.info(f"Translation: {translation}")  # Add debug log
+
+            Shloka+=1
+            self.S_no+=1
+            yield {
+            "S.No":self.S_no,
+            "Chapter":self.count,
+            "Kanda":book,
+            "Sarga":sarga,
+            "Shloka":Shloka,
+            "Translation":translation  
+            }
+
+
+
+            
+     
+       
+        
+       
